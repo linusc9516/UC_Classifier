@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="AI-powered Ulcerative Colitis Detection from Colonoscopy Images">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Professional Medical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Ulcerative Colitis Detection</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Ulcerative Colitis Detection</h1>
+            <p>AI-powered identification of UC based on colonoscopy images</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section">
+                <form action="/predict" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <label for="files">Upload colonoscopy images (multiple files supported):</label>
+                    <input type="file" name="files" id="files" class="file-input" accept="image/*" multiple required>
+                    <button type="submit" class="submit-btn" id="submitBtn">Analyze Images</button>
+                </form>
+            </div>
+
+            {% if results %}
+            <div class="results-section">
+                {% if results.images %}
+                <div class="uploaded-images">
+                    {% for image in results.images %}
+                    <div class="image-card">
+                        <img src="data:image/jpeg;base64,{{ image.base64 }}" alt="{{ image.filename }}">
+                        <div class="image-info">
+                            <div class="image-name">{{ image.filename }}</div>
+                            <div
+                                class="image-prediction {% if image.prediction == 'Normal' %}prediction-normal{% else %}prediction-uc{% endif %}">
+                                {{ image.prediction }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if results.conclusion %}
+                <div class="conclusion">
+                    <h3>Medical Analysis Report</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ results.conclusion.total_images }}</span>
+                            <span class="stat-label">Images Analyzed</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ results.conclusion.normal_count }}</span>
+                            <span class="stat-label">Normal</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ results.conclusion.uc_count }}</span>
+                            <span class="stat-label">UC Detected</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" data-uc-percentage="{{ results.conclusion.uc_percentage }}"></div>
+                    </div>
+
+                    <div class="conclusion-content">
+                        <div
+                            class="alert {% if results.conclusion.risk_level == 'high' %}alert-danger{% elif results.conclusion.risk_level == 'medium' %}alert-warning{% elif results.conclusion.risk_level == 'low' %}alert-success{% else %}alert-info{% endif %}">
+                            <strong>{{ results.conclusion.conclusion }}</strong>
+                        </div>
+
+                        <p><strong>Analysis Summary:</strong></p>
+                        <p>{{ results.conclusion.summary }}</p>
+
+                        <p><strong>Recommendation:</strong></p>
+                        <p>{{ results.conclusion.recommendation }}</p>
+                        <p class="disclaimer">
+                            <em>Note: This AI analysis is for research purposes only and should not replace professional
+                                medical diagnosis. Please consult with a qualified healthcare provider for proper
+                                medical evaluation.</em>
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Please upload one or more colonoscopy images to begin the analysis. The AI model will analyze each image
+                and provide a comprehensive report.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function () {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Analyzing...';
+        });
+
+        // Reset button state when files are selected
+        document.getElementById('files').addEventListener('change', function () {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Analyze Images';
+        });
+
+        // Set progress bar width from data attribute
+        document.addEventListener('DOMContentLoaded', function () {
+            const progressFill = document.querySelector('.progress-fill');
+            if (progressFill) {
+                const percentage = progressFill.getAttribute('data-uc-percentage');
+                if (percentage) {
+                    progressFill.style.width = percentage + '%';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
